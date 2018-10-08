@@ -28,8 +28,19 @@ class BKPrecisionMultimeter:
                                      parity=serial.PARITY_NONE,
                                      stopbits=serial.STOPBITS_ONE)
             logging.basicConfig(filename=logging_file, level=logging.DEBUG)
+	    self.ser.flush()
             self.configure_connection()
             self.time_resolution = time_resolution
+
+    def clear_buffer(self):
+	self.ser.write("\r\r")
+	self.ser.flush()
+	time.sleep(0.5)
+
+    def send_command(self,command):
+	self.ser.write(command+"\r")
+	time.sleep(0.1)
+	return self.ser.read(2000)
 
     def configure_connection(self):
         """
@@ -37,20 +48,19 @@ class BKPrecisionMultimeter:
         :return: True if connection and configuration is successful: otherwise, return False.
         """
         if self.ser.is_open:
-            logging.info('The serial port is opened.')
+            logging.info('The serial port %s is opened.' % (self.ser.port) )
         else:
             logging.error('The error could not been opened! Check serial port configuration.')
             return False
-        self.ser.write('*IDN?\r')
-        time.sleep(0.1)
-        out = self.ser.read(100)
+
+	self.clear_buffer()
+
+        out = self.send_command("*IDN?")
         logging.info('BKPrecision 2831E: (%d) %s' % (len(out), out))
-        self.ser.flush()
-        self.ser.write(':FUNC?\r')
-        time.sleep(0.1)
-        out = self.ser.read(100)
-        logging.info('BKPrecision 2831E: (%d) %s' % (len(out), out))
-        self.ser.flush()
+
+#        out = self.send_command(':FUNC?')
+#        logging.info('function: %s' % out)
+
         return True
 
     def measure(self):
@@ -59,10 +69,11 @@ class BKPrecisionMultimeter:
         :return: a float value representing the response from the multimeter at a given time_resolution. None if
                  conversion could not been completed.
         """
-        self.ser.write(':FETC?\r')
-        time.sleep(self.time_resolution)
-        out = self.ser.read(20)
-        self.ser.flush()
+        #logging.info('query multimeter.')
+#        self.ser.write(':FETCh?\r')
+#        self.ser.flush()
+#        time.sleep(self.time_resolution)
+        out = self.ser.read(2000)
         if out is not None and out != '':
             try:
                 return float(out)
@@ -70,8 +81,4 @@ class BKPrecisionMultimeter:
                 return None
 
     def close_connection(self):
-        """
-        Closes the connection with the serial port.
-        :return: None.
-        """
         self.ser.close()

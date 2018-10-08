@@ -10,6 +10,6 @@ mult.configure_connection()
 try:
     while True:
         print mult.measure()
-        time.sleep(0.1)
+        time.sleep(1.0)
 except KeyboardInterrupt:
     mult.close_connection()

@@ -25,3 +25,4 @@ make gdb
 
 # Configure BK Precision 2831E
 * Using the menu change the baud rate to 38.4k
+* Set TX termination to CR

@@ -1,14 +1,14 @@
 SHELL := /bin/bash
 PWD=$(shell pwd)
 BASE.DIR=$(PWD)
-TEST.DIR=$(PWD)/tests
+TEST.DIR=$(BASE.DIR)/tests
 TEST.BIN=$(TEST.DIR)/tests.py
-TEST.ENV=$(PWD)/pyenv
-TEST.SH=$(PWD)/test.sh
+TEST.ENV=$(BASE.DIR)/pyenv
 PYTHON.BIN=$(TEST.ENV)/bin/python
-SETUP.PY=$(PWD)/setup.py
+SETUP.PY=$(BASE.DIR)/setup.py
 ACTIVATE=$(TEST.ENV)/bin/activate
-BUILD.DIR=$(PWD)/build
+BUILD.DIR=$(BASE.DIR)/build
+DEBUG.LOG=$(BASE.DIR)/debug.log
 
 bootstrap: .FORCE
 	virtualenv $(TEST.ENV)
@@ -17,16 +17,18 @@ bootstrap: .FORCE
 install: .FORCE
 	source $(ACTIVATE) && python $(SETUP.PY) install 	
 
-test: install
+test: install clean.log
 	$(PYTHON.BIN) $(TEST.BIN)
 
 gdb: .FORCE
 	gdb $(PYTHON.BIN) -ex "run $(TEST.BIN)"
 
-clean:. .FORCE
+clean.log: .FORCE
+	rm -f $(BASE.DIR)/debug.log
+
+clean:. clean.log
 	rm -rf $(TEST.ENV)
 	rm -rf $(BUILD.DIR)
-	rm -f $(BASE.DIR)/debug.log
 	rm -f $(BASE.DIR)/tags
 
 .FORCE:
