@@ -1,4 +1,4 @@
-import serial
+from serial import serial
 import logging
 import time
 
@@ -13,7 +13,7 @@ class BKPrecisionMultimeter:
     ser = None
     time_resolution = 0.008
 
-    def __init__(self, serial_port=None, time_resolution=0.008, logging_file='bkprecision.log'):
+    def __init__(self, serial_port=None, time_resolution=0.008, logging_file='debug.log'):
         """
         Initialize the serial port in which the multimeter is connected.
         :param serial_port: is the ID (Windows) or dev resource (Linux) which the multimeter is connected.
