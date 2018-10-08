@@ -1,3 +1,4 @@
+SHELL := /bin/bash
 PWD=$(shell pwd)
 BASE.DIR=$(PWD)
 TEST.DIR=$(PWD)/tests
@@ -6,17 +7,17 @@ TEST.ENV=$(PWD)/pyenv
 TEST.SH=$(PWD)/test.sh
 PYTHON.BIN=$(TEST.ENV)/bin/python
 SETUP.PY=$(PWD)/setup.py
-ACTIVATE=$(TEST.ENV)/env/bin/activate
+ACTIVATE=$(TEST.ENV)/bin/activate
 BUILD.DIR=$(PWD)/build
 
 bootstrap: .FORCE
 	virtualenv $(TEST.ENV)
-	pip install serial --target=$(TEST.ENV)
+	source $(ACTIVATE) && pip install pyserial
 
 install: .FORCE
-	$(PYTHON.BIN) $(SETUP.PY) install 	
+	source $(ACTIVATE) && python $(SETUP.PY) install 	
 
-test: .FORCE
+test: install
 	$(PYTHON.BIN) $(TEST.BIN)
 
 gdb: .FORCE
