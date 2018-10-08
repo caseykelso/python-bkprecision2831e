@@ -10,7 +10,12 @@ sudo pip install --upgrade pip
 # Installation
 ```bash
 git clone https://github.com/mrkmedvedev/python-bkprecision2831e.git
-make install
+make bootstrap
+```
+
+# Run Test Script
+```bash
+make test
 ```
 
 # Debug
@@ -19,5 +24,4 @@ make gdb
 ```
 
 # Configure BK Precision 2831E
-1. Using the menu change the baud rate to 38.4k
-2. 
+* Using the menu change the baud rate to 38.4k
