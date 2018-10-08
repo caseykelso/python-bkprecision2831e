@@ -1,7 +1,7 @@
 from bkprecision.bkprecision import BKPrecisionMultimeter
 import time
 
-mult = BKPrecisionMultimeter(serial_port='COM10')
+mult = BKPrecisionMultimeter(serial_port='/dev/ttyUSB0')
 
 mult.configure_connection()
 
