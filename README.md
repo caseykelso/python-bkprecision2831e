@@ -13,9 +13,9 @@ git clone https://github.com/mrkmedvedev/python-bkprecision2831e.git
 make bootstrap
 ```
 
-# Run Test Script
+# Run Capture Script
 ```bash
-make test
+make capture
 ```
 
 # Debug
