@@ -2,6 +2,8 @@ import serial
 import logging
 import time
 import sys
+import string
+import re
 from threading import Thread
 
 
@@ -101,16 +103,19 @@ class BKPrecisionMultimeter:
 		time.sleep(0.1) # sample at 10Hz
 
     def read_serial(self):
+	regex_measurement = re.compile(r'^\d+\.\d+e-\d+$')
+	regex_command  = re.compile(r'^:')
+
 	while(True):
-		out = self.ser.read(50)
-		sys.stdout.write(out)
+		out = self.ser.read(100)
+
+		for line in out.splitlines():
+			if regex_measurement.match(line):
+				print(float(line))
+			elif (regex_command.match(line)):
+				logging.info('command: %s' % line)
+	        	
 		time.sleep(0.1)
-#		sys.stdout.flush()
-#        if out is not None and out != '':
-#	        return out
-#                return float(out)
-#            except ValueError:
-#                return None
 
     def close_connection(self):
         self.ser.close()
