@@ -24,23 +24,29 @@ class BKPrecisionMultimeter:
             self.ser = serial.Serial(port=serial_port,
                                      baudrate=self.baud,
                                      bytesize=serial.EIGHTBITS,
-                                     timeout=0,
+                                     timeout=1,
+				     xonxoff=False,
+				     rtscts=False,
                                      parity=serial.PARITY_NONE,
                                      stopbits=serial.STOPBITS_ONE)
+
             logging.basicConfig(filename=logging_file, level=logging.DEBUG)
+
 	    self.ser.flush()
             self.configure_connection()
             self.time_resolution = time_resolution
 
     def clear_buffer(self):
-	self.ser.write("\r\r")
+	self.ser.write("\n\n")
 	self.ser.flush()
 	time.sleep(0.5)
 
     def send_command(self,command):
-	self.ser.write(command+"\r")
+	self.ser.write(command+"\n")
 	time.sleep(0.1)
-	return self.ser.read(2000)
+	out = self.ser.read(2000)
+#        print 'out: %s' % out
+        return out
 
     def configure_connection(self):
         """
@@ -56,10 +62,22 @@ class BKPrecisionMultimeter:
 	self.clear_buffer()
 
         out = self.send_command("*IDN?")
-        logging.info('BKPrecision 2831E: (%d) %s' % (len(out), out))
-
-#        out = self.send_command(':FUNC?')
-#        logging.info('function: %s' % out)
+        logging.info('BKPrecision 2831E: %s' % out)
+        time.sleep(self.time_resolution)
+#        out = self.send_command('*TRG')
+#        logging.info('trigger measurement: %s' % out)
+#        time.sleep(self.time_resolution)
+        out = self.send_command(':FUNC?')
+        logging.info('function: %s' % out)
+        out = self.send_command(':DISPlay:ENABle?')
+        logging.info('display: %s' % out)
+        time.sleep(0.5)	
+        out = self.send_command(':DISPlay:ENABle 1')
+        logging.info('display: %s' % out)
+        time.sleep(0.5)	
+#        out = self.send_command(':READ?')
+#        logging.info('read: %s' % out)
+#        time.sleep(0.5)	
 
         return True
 
@@ -69,11 +87,8 @@ class BKPrecisionMultimeter:
         :return: a float value representing the response from the multimeter at a given time_resolution. None if
                  conversion could not been completed.
         """
-        #logging.info('query multimeter.')
-#        self.ser.write(':FETCh?\r')
-#        self.ser.flush()
-#        time.sleep(self.time_resolution)
-        out = self.ser.read(2000)
+#        logging.info('query multimeter.')
+        out = self.send_command(":FETC?")
         if out is not None and out != '':
             try:
                 return float(out)
