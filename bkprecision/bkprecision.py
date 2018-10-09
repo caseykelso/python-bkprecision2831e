@@ -43,8 +43,8 @@ class BKPrecisionMultimeter:
 
     def send_command(self,command):
 	self.ser.write(command+"\n")
-	time.sleep(0.1)
-	out = self.ser.read(2000)
+	time.sleep(0.05)
+	out = self.ser.read(200)
 #        print 'out: %s' % out
         return out
 
