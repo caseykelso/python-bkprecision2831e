@@ -86,7 +86,7 @@ class BKPrecisionMultimeter:
         while(True):
         	logging.info('query multimeter.')
 	        self.send_command(":FETC?")
-		time.sleep(0.1)
+		time.sleep(0.1) # sample at 10Hz
 
     def read_serial(self):
 	while(True):
