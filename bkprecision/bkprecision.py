@@ -4,6 +4,7 @@ import time
 import sys
 import string
 import re
+import csv
 from threading import Thread
 
 
@@ -65,8 +66,8 @@ class BKPrecisionMultimeter:
             return False
 
 	self.clear_buffer()
-#	self.send_command("*RST") # reset
-#        time.sleep(2)
+	self.send_command("*RST") # reset
+        time.sleep(10)
         logging.info('starting configuration of muiltimeter')
         self.send_command("*IDN?")
         self.send_command(':FUNC?')
@@ -100,22 +101,29 @@ class BKPrecisionMultimeter:
         while(True):
 #        	logging.info('query multimeter.')
 	        self.send_fetch(":FETC?")
-		time.sleep(0.1) # sample at 10Hz
+		time.sleep(0.11) # sample near 10Hz, note that 38.4kbps cannot keep up at 10Hz and there is corruption
 
     def read_serial(self):
-	regex_measurement = re.compile(r'^\d+\.\d+e-\d+$')
-	regex_command  = re.compile(r'^:')
+	with open('current.csv', mode='w') as current_file:
+		current_writer = csv.writer(current_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+		current_writer.writerow(['sample_index', 'current'])
+		row_index = 0
+		regex_measurement = re.compile(r'^\d+\.\d+e-\d+$')
+		regex_command  = re.compile(r'^:')
 
-	while(True):
-		out = self.ser.read(100)
+		while(True):
+			out = self.ser.read(100)
 
-		for line in out.splitlines():
-			if regex_measurement.match(line):
-				print(float(line))
-			elif (regex_command.match(line)):
-				logging.info('command: %s' % line)
-	        	
-		time.sleep(0.1)
+			for line in out.splitlines():
+				if regex_measurement.match(line):
+#					print(float(line))
+					current_writer.writerow([row_index, float(line)])
+					if (0 == (row_index % 20)):
+						current_file.flush()
+					row_index=row_index+1
+				elif ((regex_command.match(line)) and (":FETC" not in line)):
+					logging.info('command: %s' % line)
+			time.sleep(0.1)
 
     def close_connection(self):
         self.ser.close()
