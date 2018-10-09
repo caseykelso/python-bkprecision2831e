@@ -66,8 +66,8 @@ class BKPrecisionMultimeter:
             return False
 
 	self.clear_buffer()
-	self.send_command("*RST") # reset
-        time.sleep(10)
+#	self.send_command("*RST") # reset
+#       time.sleep(10)
         logging.info('starting configuration of muiltimeter')
         self.send_command("*IDN?")
         self.send_command(':FUNC?')
@@ -101,7 +101,7 @@ class BKPrecisionMultimeter:
         while(True):
 #        	logging.info('query multimeter.')
 	        self.send_fetch(":FETC?")
-		time.sleep(0.11) # sample near 10Hz, note that 38.4kbps cannot keep up at 10Hz and there is corruption
+		time.sleep(0.15) # sample near 10Hz, note that 38.4kbps cannot keep up at 10Hz and there is corruption
 
     def read_serial(self):
 	with open('current.csv', mode='w') as current_file:
