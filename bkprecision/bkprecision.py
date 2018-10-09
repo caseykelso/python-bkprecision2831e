@@ -34,8 +34,8 @@ class BKPrecisionMultimeter:
             logging.basicConfig(filename=logging_file, level=logging.DEBUG)
 
 	    self.ser.flush()
-            self.configure_connection()
-            self.time_resolution = time_resolution
+#            self.configure_connection()
+#            self.time_resolution = time_resolution
 
     def clear_buffer(self):
 	self.ser.write("\n\n")
@@ -43,7 +43,7 @@ class BKPrecisionMultimeter:
 	time.sleep(0.2)
 
     def send_command(self,command):
-	time.sleep(0.5)
+	time.sleep(0.3)
 	self.ser.write(command+"\n")
 
     def send_fetch(self,command):
@@ -65,6 +65,7 @@ class BKPrecisionMultimeter:
 	self.clear_buffer()
 #	self.send_command("*RST") # reset
 #        time.sleep(2)
+        logging.info('starting configuration of muiltimeter')
         self.send_command("*IDN?")
         self.send_command(':FUNC?')
         self.send_command(':DISPlay:ENABle?')
@@ -75,29 +76,35 @@ class BKPrecisionMultimeter:
         self.send_command(':CURR:DC:NPLC?')
         self.send_command(':CURR:DC:RANG:UPP 0.2') # set expected DC range of 0 to 0.2A (at 55V)
         self.send_command(':CURR:DC:RANG:UPP?')
-        self.send_command(':READ?')
+#        self.send_command(':READ?')
+        logging.info('completed configuration of muiltimeter')
+        time.sleep(1)
+ 
 
         return True
 
     def start(self):
-	tMeasure = Thread(target=self.query_measurement)
-	tMeasure.start()
         tSerial = Thread(target=self.read_serial)
 	tSerial.start()
+        self.configure_connection()
+	tMeasure = Thread(target=self.query_measurement)
+	tMeasure.start()
+        
 	while(True):
-		time.sleep(1) # loop forever so that main doesn't exit and we can close the threads on ctrl-c
+		time.sleep(1000) # loop forever so that main doesn't exit and we can close the threads on ctrl-c
 	return True
 
     def query_measurement(self):
         while(True):
-        	logging.info('query multimeter.')
+#        	logging.info('query multimeter.')
 	        self.send_fetch(":FETC?")
 		time.sleep(0.1) # sample at 10Hz
 
     def read_serial(self):
 	while(True):
-		out = self.ser.read(1)
+		out = self.ser.read(50)
 		sys.stdout.write(out)
+		time.sleep(0.1)
 #		sys.stdout.flush()
 #        if out is not None and out != '':
 #	        return out
