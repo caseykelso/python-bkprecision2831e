@@ -23,6 +23,15 @@ make test
 make gdb
 ```
 
+# Watch Debug Log
+```bash
+tail -F debug.log
+```
+
 # Configure BK Precision 2831E
 * Using the menu change the baud rate to 38.4k
 * Set TX termination to CR
+
+# References
+* [BK Precision 2831E manual](https://bkpmedia.s3.amazonaws.com/downloads/manuals/en-us/2831Eand5491B_manual.pdf)
+

@@ -75,9 +75,13 @@ class BKPrecisionMultimeter:
         out = self.send_command(':DISPlay:ENABle 1')
         logging.info('display: %s' % out)
         time.sleep(0.5)	
-#        out = self.send_command(':READ?')
-#        logging.info('read: %s' % out)
-#        time.sleep(0.5)	
+        out = self.send_command(':FUNCtion CURRent:DC')
+	time.sleep(0.5)
+	out = self.send_command(':FUNCtion?')
+	time.sleep(0.5)
+        out = self.send_command(':READ?')
+        logging.info('read: %s' % out)
+        time.sleep(0.5)	
 
         return True
 
@@ -89,6 +93,8 @@ class BKPrecisionMultimeter:
         """
 #        logging.info('query multimeter.')
         out = self.send_command(":FETC?")
+#	time.sleep(0.1)
+	print out
         if out is not None and out != '':
             try:
                 return float(out)
