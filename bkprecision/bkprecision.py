@@ -13,7 +13,6 @@ class BKPrecisionMultimeter:
 
     baud = 38400
     ser = None
-    time_resolution = 0.008
 
     def __init__(self, serial_port=None, time_resolution=0.008, logging_file='debug.log'):
         """
@@ -44,7 +43,13 @@ class BKPrecisionMultimeter:
 	time.sleep(0.2)
 
     def send_command(self,command):
+	time.sleep(0.5)
 	self.ser.write(command+"\n")
+
+    def send_fetch(self,command):
+	self.ser.write(command+"\n")
+
+
 
     def configure_connection(self):
         """
@@ -58,7 +63,8 @@ class BKPrecisionMultimeter:
             return False
 
 	self.clear_buffer()
-
+#	self.send_command("*RST") # reset
+#        time.sleep(2)
         self.send_command("*IDN?")
         self.send_command(':FUNC?')
         self.send_command(':DISPlay:ENABle?')
@@ -85,7 +91,7 @@ class BKPrecisionMultimeter:
     def query_measurement(self):
         while(True):
         	logging.info('query multimeter.')
-	        self.send_command(":FETC?")
+	        self.send_fetch(":FETC?")
 		time.sleep(0.1) # sample at 10Hz
 
     def read_serial(self):
