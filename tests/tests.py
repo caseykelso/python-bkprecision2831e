@@ -6,6 +6,6 @@ import logging
 mult = BKPrecisionMultimeter(serial_port='/dev/ttyUSB0')
 try:
     while True:
-        print mult.measure()
+        mult.start()
 except KeyboardInterrupt:
     mult.close_connection()

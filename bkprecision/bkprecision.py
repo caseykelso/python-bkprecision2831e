@@ -1,6 +1,8 @@
 import serial
 import logging
 import time
+import sys
+from threading import Thread
 
 
 class BKPrecisionMultimeter:
@@ -24,7 +26,7 @@ class BKPrecisionMultimeter:
             self.ser = serial.Serial(port=serial_port,
                                      baudrate=self.baud,
                                      bytesize=serial.EIGHTBITS,
-                                     timeout=1,
+                                     timeout=0,
 				     xonxoff=False,
 				     rtscts=False,
                                      parity=serial.PARITY_NONE,
@@ -39,14 +41,10 @@ class BKPrecisionMultimeter:
     def clear_buffer(self):
 	self.ser.write("\n\n")
 	self.ser.flush()
-	time.sleep(0.5)
+	time.sleep(0.2)
 
     def send_command(self,command):
 	self.ser.write(command+"\n")
-	time.sleep(0.05)
-	out = self.ser.read(200)
-#        print 'out: %s' % out
-        return out
 
     def configure_connection(self):
         """
@@ -61,45 +59,45 @@ class BKPrecisionMultimeter:
 
 	self.clear_buffer()
 
-        out = self.send_command("*IDN?")
-        logging.info('BKPrecision 2831E: %s' % out)
-        time.sleep(self.time_resolution)
-#        out = self.send_command('*TRG')
-#        logging.info('trigger measurement: %s' % out)
-#        time.sleep(self.time_resolution)
-        out = self.send_command(':FUNC?')
-        logging.info('function: %s' % out)
-        out = self.send_command(':DISPlay:ENABle?')
-        logging.info('display: %s' % out)
-        time.sleep(0.5)	
-        out = self.send_command(':DISPlay:ENABle 1')
-        logging.info('display: %s' % out)
-        time.sleep(0.5)	
-        out = self.send_command(':FUNCtion CURRent:DC')
-	time.sleep(0.5)
-	out = self.send_command(':FUNCtion?')
-	time.sleep(0.5)
-        out = self.send_command(':READ?')
-        logging.info('read: %s' % out)
-        time.sleep(0.5)	
+        self.send_command("*IDN?")
+        self.send_command(':FUNC?')
+        self.send_command(':DISPlay:ENABle?')
+        self.send_command(':DISPlay:ENABle 1')
+        self.send_command(':FUNCtion CURRent:DC')
+	self.send_command(':FUNC?')
+        self.send_command(':CURR:DC:NPLC 0.1')
+        self.send_command(':CURR:DC:NPLC?')
+        self.send_command(':CURR:DC:RANG:UPP 0.2') # set expected DC range of 0 to 0.2A (at 55V)
+        self.send_command(':CURR:DC:RANG:UPP?')
+        self.send_command(':READ?')
 
         return True
 
-    def measure(self):
-        """
-        Query a measure command to the multimeter.
-        :return: a float value representing the response from the multimeter at a given time_resolution. None if
-                 conversion could not been completed.
-        """
-#        logging.info('query multimeter.')
-        out = self.send_command(":FETC?")
-#	time.sleep(0.1)
-	print out
-        if out is not None and out != '':
-            try:
-                return float(out)
-            except ValueError:
-                return None
+    def start(self):
+	tMeasure = Thread(target=self.query_measurement)
+	tMeasure.start()
+        tSerial = Thread(target=self.read_serial)
+	tSerial.start()
+	while(True):
+		time.sleep(1) # loop forever so that main doesn't exit and we can close the threads on ctrl-c
+	return True
+
+    def query_measurement(self):
+        while(True):
+        	logging.info('query multimeter.')
+	        self.send_command(":FETC?")
+		time.sleep(0.1)
+
+    def read_serial(self):
+	while(True):
+		out = self.ser.read(1)
+		sys.stdout.write(out)
+#		sys.stdout.flush()
+#        if out is not None and out != '':
+#	        return out
+#                return float(out)
+#            except ValueError:
+#                return None
 
     def close_connection(self):
         self.ser.close()
