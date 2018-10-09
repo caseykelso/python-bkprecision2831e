@@ -18,7 +18,10 @@ install: .FORCE
 	source $(ACTIVATE) && python $(SETUP.PY) install 	
 
 capture: install clean.log
-	timeout 315 $(PYTHON.BIN) $(CAPTURE.BIN) | true # capture for 5 minutes plus an additional 15 seconds to allow for device setup
+#	timeout 15 $(PYTHON.BIN) $(CAPTURE.BIN) | true # capture for 5 minutes plus an additional 15 seconds to allow for device setup
+	$(PYTHON.BIN) $(CAPTURE.BIN) # capture for 5 minutes plus an additional 15 seconds to allow for device setup
+
+
 
 gdb: .FORCE
 	gdb $(PYTHON.BIN) -ex "run $(CAPTURE.BIN)"

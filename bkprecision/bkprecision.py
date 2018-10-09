@@ -8,22 +8,26 @@ import csv
 from threading import Thread
 
 
+
 class BKPrecisionMultimeter:
 
     """
     This class provides basic functionality to operate with a BK Precision multimeter 2831E.
     """
 
-    baud = 38400
-    ser = None
+    baud     = 38400
+    ser      = None
+    running  = True
 
-    def __init__(self, serial_port=None, time_resolution=0.008, logging_file='debug.log'):
+
+    def __init__(self, serial_port=None):
         """
         Initialize the serial port in which the multimeter is connected.
         :param serial_port: is the ID (Windows) or dev resource (Linux) which the multimeter is connected.
         :param time_resolution: is the time between measures.
         :param logging_file: optional, is the file which the log messages will be stored.
         """
+        logging.info("***multimeter class");
         if serial_port is not None:
             self.ser = serial.Serial(port=serial_port,
                                      baudrate=self.baud,
@@ -34,11 +38,12 @@ class BKPrecisionMultimeter:
                                      parity=serial.PARITY_NONE,
                                      stopbits=serial.STOPBITS_ONE)
 
-            logging.basicConfig(filename=logging_file, level=logging.DEBUG)
 
 	    self.ser.flush()
-#            self.configure_connection()
-#            self.time_resolution = time_resolution
+            self.tSerial  = None
+            self.tMeasure = None
+
+
 
     def clear_buffer(self):
 	self.ser.write("\n\n")
@@ -51,7 +56,6 @@ class BKPrecisionMultimeter:
 
     def send_fetch(self,command):
 	self.ser.write(command+"\n")
-
 
 
     def configure_connection(self):
@@ -87,23 +91,41 @@ class BKPrecisionMultimeter:
         return True
 
     def start(self):
-        tSerial = Thread(target=self.read_serial)
-	tSerial.start()
+        self.tSerial  = Thread(target=self.read_serial)
+	self.tSerial.start()
         self.configure_connection()
-	tMeasure = Thread(target=self.query_measurement)
-	tMeasure.start()
-        
-	while(True):
-		time.sleep(1000) # loop forever so that main doesn't exit and we can close the threads on ctrl-c
+        self.tMeasure = Thread(target=self.query_measurement)
+	self.tMeasure.start()
 	return True
 
+    def stop(self):
+	logging.info("bkprecision.stop() called")
+	self.running = False
+	if (self.tSerial is not None):
+		self.tSerial.join()
+	
+	if (self.tMeasure is not None):
+		self.tMeasure.join()
+
+        self.ser.close()
+	logging.info("bkprecision.stop() complete\n")
+
+
+
+    def is_running(self):
+	logging.info("is_running() called\n")
+	return self.running
+
     def query_measurement(self):
-        while(True):
+	logging.info("query_measurement() thread started\n")
+        while(self.running):
 #        	logging.info('query multimeter.')
 	        self.send_fetch(":FETC?")
 		time.sleep(0.15) # sample near 10Hz, note that 38.4kbps cannot keep up at 10Hz and there is corruption
+	logging.info("query_measurement() thread stopped\n")
 
     def read_serial(self):
+	print("read_serial() thread started")
 	with open('current.csv', mode='w') as current_file:
 		current_writer = csv.writer(current_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
 		current_writer.writerow(['sample_index', 'current'])
@@ -111,7 +133,7 @@ class BKPrecisionMultimeter:
 		regex_measurement = re.compile(r'^\d+\.\d+e-\d+$')
 		regex_command  = re.compile(r'^:')
 
-		while(True):
+		while(self.running):
 			out = self.ser.read(100)
 
 			for line in out.splitlines():
@@ -124,6 +146,7 @@ class BKPrecisionMultimeter:
 				elif ((regex_command.match(line)) and (":FETC" not in line)):
 					logging.info('command: %s' % line)
 			time.sleep(0.1)
+	print("read_serial() thread stopped");
 
-    def close_connection(self):
-        self.ser.close()
+
+
