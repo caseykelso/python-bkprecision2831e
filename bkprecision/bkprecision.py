@@ -129,7 +129,7 @@ class BKPrecisionMultimeter:
     def timeout_and_exit(self):
 	logging.info("timeout_and_exit() thread started\n")
 	cycle=0
-	while(self.running and cycle < 60):
+	while(self.running and cycle < 300):
 		time.sleep(1)
 		cycle=cycle+1
 	os.kill(os.getpid(), signal.SIGTERM)
