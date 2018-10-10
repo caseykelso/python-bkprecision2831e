@@ -5,6 +5,8 @@ import sys
 import string
 import re
 import csv
+import os
+import signal
 from threading import Thread
 
 
@@ -18,6 +20,7 @@ class BKPrecisionMultimeter:
     baud     = 38400
     ser      = None
     running  = True
+    setup    = True
 
 
     def __init__(self, serial_port=None):
@@ -42,6 +45,7 @@ class BKPrecisionMultimeter:
 	    self.ser.flush()
             self.tSerial  = None
             self.tMeasure = None
+	    self.tTimeout = None
 
 
 
@@ -86,6 +90,7 @@ class BKPrecisionMultimeter:
 #        self.send_command(':READ?')
         logging.info('completed configuration of muiltimeter')
         time.sleep(1)
+	self.setup = False #setup complete
  
 
         return True
@@ -96,6 +101,8 @@ class BKPrecisionMultimeter:
         self.configure_connection()
         self.tMeasure = Thread(target=self.query_measurement)
 	self.tMeasure.start()
+        self.tTimeout = Thread(target=self.timeout_and_exit)
+	self.tTimeout.start()
 	return True
 
     def stop(self):
@@ -107,6 +114,9 @@ class BKPrecisionMultimeter:
 	if (self.tMeasure is not None):
 		self.tMeasure.join()
 
+	if (self.tTimeout is not None):
+		self.tTimeout.join()
+
         self.ser.close()
 	logging.info("bkprecision.stop() complete\n")
 
@@ -115,6 +125,15 @@ class BKPrecisionMultimeter:
     def is_running(self):
 	logging.info("is_running() called\n")
 	return self.running
+
+    def timeout_and_exit(self):
+	logging.info("timeout_and_exit() thread started\n")
+	cycle=0
+	while(self.running and cycle < 60):
+		time.sleep(1)
+		cycle=cycle+1
+	os.kill(os.getpid(), signal.SIGTERM)
+	logging.info("timeout_and_exit() thread complete\n")
 
     def query_measurement(self):
 	logging.info("query_measurement() thread started\n")
@@ -132,19 +151,30 @@ class BKPrecisionMultimeter:
 		row_index = 0
 		regex_measurement = re.compile(r'^\d+\.\d+e-\d+$')
 		regex_command  = re.compile(r'^:')
+#		misaligned_frame = ""
 
 		while(self.running):
-			out = self.ser.read(100)
+			out              = self.ser.read(1000)
+#			last_linefeed    = out.rfind('\n')
+#			if (out is not None and last_linefeed is not -1 and not self.setup and (len(out)) != last_linefeed+1):
+#				print ("original out:"+  out +"," +str(len(out)))
+#				print ("last linefeed position: %d" % last_linefeed)
+#				misaligned_frame = out[last_linefeed:]
+#				print ("misaligned_frame: %s" % misaligned_frame)
+#				out              = out[:last_linefeed]
+#				print ("new out: %s" % out) 
 
 			for line in out.splitlines():
 				if regex_measurement.match(line):
-#					print(float(line))
+					print((line))
 					current_writer.writerow([row_index, float(line)])
-					if (0 == (row_index % 20)):
+					if (0 == (row_index % 10)):
 						current_file.flush()
 					row_index=row_index+1
-				elif ((regex_command.match(line)) and (":FETC" not in line)):
+				elif ((regex_command.match(line)) and (":FETC" not in line) and not self.setup):
 					logging.info('command: %s' % line)
+				elif (":FETC" not in line and not self.setup):
+					logging.info('malformed: %s' % line)
 			time.sleep(0.1)
 	print("read_serial() thread stopped");
 
